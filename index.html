@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estado de Pagos - Barracuda</title>  
+    <link rel="icon" href="icon.png" type="image/x-icon">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            /* Fondo actualizado según solicitud */
+            background-image: linear-gradient(to bottom, rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.95)), url('wall.jpg');
+            background-attachment: fixed;
+            background-size: cover;
+            color: #f8fafc;
+            min-height: 100vh;
+        }
+
+        /* Estilo Glassmorphism */
+        .glass {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(16px) saturate(180%);
+            -webkit-backdrop-filter: blur(16px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .card {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .card:hover {
+            transform: translateY(-8px);
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .status-badge {
+            padding: 4px 14px;
+            border-radius: 9999px;
+            font-size: 0.7rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .status-pendiente {
+            background-color: rgba(239, 68, 68, 0.3);
+            color: #ff8080;
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            animation: pulse-red 2s infinite;
+        }
+
+        .status-pagado {
+            background-color: rgba(34, 197, 94, 0.3);
+            color: #4ade80;
+            border: 1px solid rgba(34, 197, 94, 0.4);
+        }
+
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .btn-action {
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-action:hover {
+            transform: scale(1.05);
+            filter: brightness(1.2);
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <header class="max-w-7xl mx-auto mb-10 animate__animated animate__fadeInDown">
+        <div class="flex flex-col lg:flex-row lg:items-start justify-between gap-6">
+            <div class="flex-1">
+                <h1 class="text-4xl font-bold text-white mb-2">Resumen de Cuenta 🍤</h1>
+                <p class="text-slate-300 mb-6">Desglose individual de consumos y propinas.</p>
+                
+                <div class="flex flex-wrap gap-4 mb-6">
+                    <!-- Botones de Acción -->
+                    <button onclick="openModal('modal-tabla')" class="glass btn-action px-6 py-3 rounded-xl font-bold text-white border-blue-500/30 hover:bg-blue-500/20">
+                        📊 Ver Tabla
+                    </button>
+                    <button onclick="openModal('modal-ticket')" class="glass btn-action px-6 py-3 rounded-xl font-bold text-white border-green-500/30 hover:bg-green-500/20">
+                        🧾 Ver Ticket
+                    </button>
+                </div>
+
+                <!-- Sección de Información Bancaria -->
+                <div class="glass border-l-4 border-blue-500 p-5 rounded-2xl max-w-md animate__animated animate__fadeInLeft">
+                    <h3 class="text-blue-400 font-bold uppercase text-xs tracking-widest mb-2">Cuenta a Transferir</h3>
+                    <div class="space-y-1">
+                        <p class="flex items-center gap-2">
+                            <span class="text-slate-400 text-sm">Banco:</span> 
+                            <span class="font-semibold text-white">Agrícola</span>
+                        </p>
+                        <p class="flex items-center gap-2">
+                            <span class="text-slate-400 text-sm">Teléfono:</span> 
+                            <span class="font-semibold text-white">77194231</span>
+                        </p>
+                        <p class="flex items-center gap-2 text-lg">
+                            <span class="text-slate-400 text-sm font-normal">Cuenta:</span> 
+                            <span class="font-bold text-blue-300 tracking-wider">3113091725</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass p-6 rounded-3xl border border-white/10 flex flex-col items-center justify-center min-w-[240px]">
+                <span class="text-sm text-slate-400 block mb-1 uppercase tracking-tighter">Total General de la Mesa</span>
+                <span class="text-5xl font-black text-green-400">$173.36</span>
+                <div class="mt-2 text-[10px] text-slate-500 italic text-center">Incluye propina y cargos adicionales</div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto">
+        <div id="cards-container" class="grid-container">
+            <!-- Dinámico con JS -->
+        </div>
+    </main>
+
+    <!-- Modales -->
+    <div id="modal-tabla" class="modal" onclick="closeModal('modal-tabla')">
+        <div class="relative max-w-5xl w-full" onclick="event.stopPropagation()">
+            <button onclick="closeModal('modal-tabla')" class="absolute -top-12 right-0 text-white text-3xl font-bold">&times;</button>
+            <img src="tabla.png" alt="Tabla de pagos" class="w-full rounded-2xl shadow-2xl border border-white/10">
+        </div>
+    </div>
+
+    <div id="modal-ticket" class="modal" onclick="closeModal('modal-ticket')">
+        <div class="relative max-w-md w-full" onclick="event.stopPropagation()">
+            <button onclick="closeModal('modal-ticket')" class="absolute -top-12 right-0 text-white text-3xl font-bold">&times;</button>
+            <img src="ticket.jpeg" alt="Ticket del restaurante" class="w-full rounded-2xl shadow-2xl border border-white/10">
+        </div>
+    </div>
+
+    <script>
+        const datos = [
+            { id: 1, nombre: "Ada Duanes", comida: "Camarón salsa rosada", extra: "Aguacate extra", bebida: "Coca Cola", total: 15.45 },
+            { id: 2, nombre: "Adriana Ceron", comida: "Margadita grande", extra: "", bebida: "Coca Cola", total: 13.00 },
+            { id: 3, nombre: "Valeria Zelaya", comida: "Rabiosa personal", extra: "", bebida: "Coca Cola", total: 10.00 },
+            { id: 4, nombre: "Diego Escobar", comida: "Super frito mixto 1/4", extra: "", bebida: "Coca Cola", total: 8.25 },
+            { id: 5, nombre: "Hacell Andrea", comida: "Super frito mixto 1/4", extra: "", bebida: "Coca Cola", total: 8.25 },
+            { id: 6, nombre: "Luis Moz", comida: "Super frito mixto 1/4", extra: "", bebida: "Coca Cola", total: 8.25, pagado: true },
+            { id: 7, nombre: "Daniel Lazo", comida: "Queso burguesa", extra: "", bebida: "Coca Cola", total: 9.75 },
+            { id: 8, nombre: "Luis Arce", comida: "Lomo típico", extra: "", bebida: "Coca Cola", total: 15.60 },
+            { id: 9, nombre: "Marvin Rene", comida: "Lomo típico", extra: "", bebida: "Coca Cola", total: 15.60 },
+            { id: 10, nombre: "Miguel Barahona", comida: "Lomo típico", extra: "Limonada natural", bebida: "Coca Cola", total: 17.75 },
+            { id: 11, nombre: "Kelvin Beltran", comida: "Gallina asada", extra: "", bebida: "Coca Cola", total: 11.00 },
+            { id: 12, nombre: "Luis Velasco", comida: "Plato de bocas", extra: "", bebida: "Coca Cola", total: 14.75 },
+            { id: 13, nombre: "Irvin Ramos", comida: "Camarón/Calamar/Ajill", extra: "", bebida: "Coca Cola", total: 15.50 },
+            { id: 14, nombre: "Lesly Escobar", comida: "Porkys personal", extra: "", bebida: "Coca Cola", total: 10.20 }
+        ];
+
+        const container = document.getElementById('cards-container');
+
+        datos.forEach((p, index) => {
+            const card = document.createElement('div');
+            card.className = `glass card rounded-3xl p-6 animate__animated animate__fadeInUp`;
+            card.style.animationDelay = `${index * 0.05}s`;
+
+            const statusClass = p.pagado ? 'status-pagado' : 'status-pendiente';
+            const statusText = p.pagado ? 'Pagado' : 'Pendiente';
+            
+            card.innerHTML = `
+                <div class="flex justify-between items-start mb-4">
+                    <div class="h-12 w-12 bg-white/10 rounded-2xl flex items-center justify-center text-xl font-bold text-white border border-white/20">
+                        ${p.nombre.charAt(0).toUpperCase()}
+                    </div>
+                    <span class="status-badge ${statusClass}">${statusText}</span>
+                </div>
+                
+                <h2 class="text-xl font-bold text-white mb-1 capitalize">${p.nombre}</h2>
+                <div class="space-y-3 mt-4">
+                    <div class="flex justify-between text-sm">
+                        <span class="text-slate-400 italic">Comida:</span>
+                        <span class="text-slate-100 font-medium">${p.comida}</span>
+                    </div>
+                    ${p.extra ? `
+                    <div class="flex justify-between text-sm">
+                        <span class="text-slate-400 italic">Extras:</span>
+                        <span class="text-blue-300 font-medium">${p.extra}</span>
+                    </div>` : ''}
+                    <div class="flex justify-between text-sm border-b border-white/10 pb-3">
+                        <span class="text-slate-400 italic">Bebida:</span>
+                        <span class="text-slate-100 font-medium">${p.bebida}</span>
+                    </div>
+                    <div class="flex justify-between items-center pt-2">
+                        <span class="text-lg font-semibold text-slate-300">Total</span>
+                        <span class="text-2xl font-black text-white tracking-tight">$${p.total.toFixed(2)}</span>
+                    </div>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+
+        function openModal(id) {
+            document.getElementById(id).classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
+
+        // Cerrar modales con la tecla Escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal').forEach(m => m.classList.remove('active'));
+                document.body.style.overflow = 'auto';
+            }
+        });
+    </script>
+</body>
+</html>
